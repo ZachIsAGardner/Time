@@ -1,0 +1,183 @@
+<!-- CSS -->
+<style>
+    body {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        height: 90%;
+    }
+
+    #container {
+        height: 125px;
+        width: 350px;
+    
+        display: flex;
+        justify-content: center;
+        flex-direction: column;
+        margin: auto;
+
+        position: relative;
+
+        border: 4px solid black;
+        border-radius: 10px;
+    }
+
+    #timeRange, 
+    #lengthDestination {
+        margin: 0;
+        padding: 0;
+    }
+
+    #remainderDisplay,
+    #display {
+        text-align: center;
+        width: auto;
+        padding: 15px;
+
+        margin: 0;
+        padding: 0;
+    }
+
+    #remainderDisplay.reached-destination {
+        font-style: italic;
+    }
+
+    #display.reached-destination {
+        text-decoration: underline;
+        font-style: italic;
+    }
+
+    #subDisplay {
+        text-align: center;
+        margin: auto;
+
+        width: 200px;
+
+        padding: 5px 15px;
+        border-radius: 5px 5px 0 0;
+        background:rgb(49, 49, 49);
+        color:rgb(155, 155, 155);
+    }
+
+    #progressBar {
+        background: linear-gradient(to right, #36e364, #7bf032);
+        position: absolute;
+
+        width: 0%;
+        height: 100%;
+        z-index: -10;
+
+        transition: width 1s;
+    }
+</style>
+
+<!-- HTML -->
+<div>
+    <div id="subDisplay">
+        <h3 id="timeRange">x:xx xx to x:xx xx</h3>
+        <h3 id="lengthDestination">x:xx xx to x:xx xx</h3>
+    </div>
+
+    <div id="container">
+        <div id="progressBar"></div>
+        <h1 id="display">XXh XXm XXs</h1>
+        <h3 id="remainderDisplay"></h3>
+    </div> 
+</div>
+
+<!-- JS -->
+<!-- jQuery --><script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<!-- Moment --><script src="https://momentjs.com/downloads/moment.js"></script>
+<script>
+    // Variables
+
+    var startTime = "09:00:00";
+    var length = 8;
+    
+    // Life cycle
+
+    var startDate;
+    var destination;
+    
+    // Entry point
+    function start() {
+        document.title = "Time";
+        
+        // Length of time in milliseconds
+        destination = length * (60 * 60 * 1000);
+        var currentDate = `${new Date().getMonth() + 1} ${new Date().getDate()} ${new Date().getFullYear()}`;
+        startDate = new Date(`${currentDate} ${startTime}`);
+        
+        // Display times
+        $("#timeRange").html(`${moment(startDate).format("h:mm A")} to ${moment(startDate).add(length, "hours").format("h:mm A")}`);
+        $("#lengthDestination").html(formatTime(digestTime(destination + 1), "H M S"));
+        
+        // Kickoff update
+        update();
+    }
+    
+    // Execute after every browser refresh.
+    function update() { 
+        // Get difference in milliseconds
+        var difference = new Date() - startDate;
+        
+        // Update display
+        $("#display").html(formatTime(digestTime(difference)));
+        var sign = (difference >= destination) ? "+" : "-";
+        $("#remainderDisplay").html(`${sign} ${formatTime(digestTime(difference - destination))}`);
+        
+        // Highlight if reached destination
+        if (difference >= destination) {
+            $("#display").addClass("reached-destination");
+            $("#remainderDisplay").addClass("reached-destination"); 
+        }
+        
+        // Update progress
+        $("#progressBar").css("width", `${Math.min(100, Math.round((difference / destination) * 100, 2))}%`);
+        
+        // Refresh
+        requestAnimationFrame(update); 
+    }
+
+    // Methods
+
+    // Return a string using the provided time object.
+    function formatTime(timeObject, format) {
+        if (format == null)
+            format = "H M S ms"
+
+        return format
+            .split("H").join(`${timeObject.hours}h`)
+            .split("M").join(`${timeObject.minutes}m`)
+            .split("S").join(`${timeObject.seconds}s`)
+            .split("ms").join(`${timeObject.milliseconds}ms`);
+    }
+    
+    // Take in time in milliseconds, and return an object with that time split over different time measurements.
+    function digestTime(time) {
+        time = Math.abs(time);
+
+        var hours = Math.floor(time / 1000 / 60 / 60).toString();
+        if (hours.length < 2)
+        hours = "0" + hours;
+        
+        var minutes = Math.floor((time / 1000 / 60) % 60).toString();
+        if (minutes.length < 2)
+        minutes = "0" + minutes;
+        
+        var seconds = Math.floor((time / 1000) % 60).toString();
+        if (seconds.length < 2)
+        seconds = "0" + seconds;
+        
+        var milliseconds = Math.floor((time) % 1000).toString();
+        if (milliseconds.length < 2)
+        milliseconds = "00" + milliseconds;
+        else if (milliseconds.length < 3)
+        milliseconds = "0" + milliseconds;
+        
+        return { hours, minutes, seconds, milliseconds };
+    }
+
+    start(); 
+</script>
+
